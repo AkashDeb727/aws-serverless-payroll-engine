@@ -1,0 +1,1368 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AWS Payroll Dashboard</title>
+    <style>
+      /* ─── Reset & Base ─────────────────────────────────────── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --color-primary: #232f3e;
+        --color-secondary: #37475a;
+        --color-accent: #ff9900;
+        --color-accent-dim: #e68a00;
+        --color-bg: #f4f6f9;
+        --color-card: #ffffff;
+        --color-border: #dde2ea;
+        --color-text: #1a202c;
+        --color-muted: #5a6475;
+        --color-success: #1d7a4f;
+        --color-success-bg: #edfaf3;
+        --color-error: #c0392b;
+        --color-error-bg: #fef2f2;
+        --color-info: #1b6fab;
+        --color-info-bg: #ebf4fd;
+
+        --badge-done-text: #1a5c35;
+        --badge-done-bg: #d1fae5;
+        --badge-proc-text: #1b4f8a;
+        --badge-proc-bg: #dbeafe;
+        --badge-pend-text: #7a5200;
+        --badge-pend-bg: #fef3c7;
+
+        --shadow-sm:
+          0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 14px;
+
+        --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+        --font-mono: "Consolas", "Cascadia Code", "Fira Mono", monospace;
+
+        --header-h: 64px;
+      }
+
+      html {
+        font-size: 16px;
+      }
+
+      body {
+        font-family: var(--font-sans);
+        background: var(--color-bg);
+        color: var(--color-text);
+        min-height: 100vh;
+        line-height: 1.5;
+      }
+
+      /* ─── Header ───────────────────────────────────────────── */
+      .site-header {
+        background: var(--color-primary);
+        height: var(--header-h);
+        display: flex;
+        align-items: center;
+        padding: 0 2rem;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+      }
+
+      .header-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .header-logo {
+        width: 36px;
+        height: 36px;
+        background: var(--color-accent);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .header-logo svg {
+        display: block;
+      }
+
+      .header-titles {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+
+      .header-title {
+        font-size: 1.0625rem;
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: 0.01em;
+        line-height: 1.2;
+      }
+
+      .header-subtitle {
+        font-size: 0.75rem;
+        color: #a0aec0;
+        font-weight: 400;
+        letter-spacing: 0.02em;
+      }
+
+      .header-spacer {
+        flex: 1;
+      }
+
+      .header-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .header-clock {
+        font-size: 0.8125rem;
+        color: #a0aec0;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ─── Main layout ───────────────────────────────────────── */
+      .main-content {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 1rem 1.5rem 1rem;
+      }
+
+      /* ─── Summary Cards ─────────────────────────────────────── */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.75rem;
+      }
+
+      .stat-card {
+        background: var(--color-card);
+        border-radius: var(--radius-md);
+        padding: 1.25rem 1.5rem;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--color-border);
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .stat-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--color-muted);
+      }
+
+      .stat-value {
+        font-size: 1.625rem;
+        font-weight: 700;
+        color: var(--color-primary);
+        font-variant-numeric: tabular-nums;
+        line-height: 1.2;
+      }
+
+      .stat-sub {
+        font-size: 0.75rem;
+        color: var(--color-muted);
+      }
+
+      .stat-accent {
+        border-top: 3px solid var(--color-accent);
+      }
+
+      /* ─── Action Bar ─────────────────────────────────────────── */
+      .action-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+        flex-wrap: wrap;
+      }
+
+      .action-bar-left {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+      .action-bar-right {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .section-heading {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--color-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-right: 0.25rem;
+      }
+
+      /* ─── Buttons ─────────────────────────────────────────────── */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        font-weight: 600;
+        padding: 0.5625rem 1.125rem;
+        border-radius: var(--radius-sm);
+        border: none;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          box-shadow 0.15s,
+          opacity 0.15s;
+        white-space: nowrap;
+        letter-spacing: 0.01em;
+        line-height: 1;
+        text-decoration: none;
+      }
+
+      .btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      .btn-primary {
+        background: var(--color-accent);
+        color: #111;
+      }
+      .btn-primary:hover:not(:disabled) {
+        background: var(--color-accent-dim);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .btn-secondary {
+        background: var(--color-card);
+        color: var(--color-primary);
+        border: 1.5px solid var(--color-border);
+      }
+      .btn-secondary:hover:not(:disabled) {
+        background: #edf0f5;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .btn-ghost {
+        background: transparent;
+        color: var(--color-muted);
+        border: 1.5px solid var(--color-border);
+      }
+      .btn-ghost:hover:not(:disabled) {
+        background: #edf0f5;
+      }
+
+      /* ─── Spinner ─────────────────────────────────────────────── */
+      .spinner {
+        width: 15px;
+        height: 15px;
+        border: 2px solid rgba(0, 0, 0, 0.25);
+        border-top-color: #111;
+        border-radius: 50%;
+        animation: spin 0.65s linear infinite;
+        display: none;
+      }
+      .btn-primary .spinner {
+        border-top-color: #111;
+      }
+      .btn--loading .spinner {
+        display: block;
+      }
+      .btn--loading .btn-icon {
+        display: none;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ─── Toast Notifications ────────────────────────────────── */
+      .toast-host {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        z-index: 999;
+        display: flex;
+        flex-direction: column;
+        gap: 0.625rem;
+        pointer-events: none;
+      }
+
+      .toast {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        background: var(--color-card);
+        border-radius: var(--radius-md);
+        padding: 0.875rem 1.125rem;
+        box-shadow: var(--shadow-lg);
+        border-left: 4px solid transparent;
+        min-width: 280px;
+        max-width: 380px;
+        pointer-events: auto;
+        animation: toastIn 0.25s ease;
+      }
+      .toast.toast-success {
+        border-color: var(--color-success);
+      }
+      .toast.toast-error {
+        border-color: var(--color-error);
+      }
+      .toast.toast-info {
+        border-color: var(--color-info);
+      }
+
+      .toast-icon {
+        font-size: 1.125rem;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .toast-body {
+        flex: 1;
+      }
+      .toast-title {
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: var(--color-text);
+        line-height: 1.3;
+      }
+      .toast-msg {
+        font-size: 0.8125rem;
+        color: var(--color-muted);
+        margin-top: 2px;
+      }
+      .toast-close {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--color-muted);
+        font-size: 1rem;
+        line-height: 1;
+        padding: 0;
+        flex-shrink: 0;
+      }
+      .toast-close:hover {
+        color: var(--color-text);
+      }
+
+      @keyframes toastIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ─── Table Card ──────────────────────────────────────────── */
+      .table-card {
+        background: var(--color-card);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--color-border);
+        overflow: hidden;
+      }
+
+      .table-card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--color-border);
+        background: #fafbfc;
+      }
+
+      .table-title {
+        font-size: 0.9375rem;
+        font-weight: 700;
+        color: var(--color-primary);
+      }
+
+      .table-count {
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: var(--color-bg);
+        color: var(--color-muted);
+        border-radius: 999px;
+        padding: 0.2rem 0.625rem;
+        border: 1px solid var(--color-border);
+      }
+
+      .table-header-actions {
+        margin-left: auto;
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      /* ─── Table ───────────────────────────────────────────────── */
+      .table-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+      }
+
+      thead tr {
+        background: #f8f9fb;
+        border-bottom: 1.5px solid var(--color-border);
+      }
+
+      th {
+        padding: 0.75rem 1.125rem;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--color-muted);
+        white-space: nowrap;
+        user-select: none;
+      }
+
+      th.col-num {
+        text-align: right;
+      }
+
+      tbody tr {
+        border-bottom: 1px solid var(--color-border);
+        transition: background 0.1s;
+      }
+      tbody tr:last-child {
+        border-bottom: none;
+      }
+      tbody tr:hover {
+        background: #f8f9fb;
+      }
+
+      td {
+        padding: 0.875rem 1.125rem;
+        vertical-align: middle;
+        color: var(--color-text);
+      }
+
+      td.col-num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        font-weight: 500;
+      }
+
+      .run-id {
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        color: var(--color-muted);
+        letter-spacing: 0.02em;
+      }
+
+      .employee-id {
+        font-weight: 700;
+        color: var(--color-primary);
+      }
+
+      .month-chip {
+        display: inline-block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: var(--color-bg);
+        color: var(--color-secondary);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        padding: 0.2rem 0.55rem;
+      }
+
+      /* ─── Status Badges ───────────────────────────────────────── */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        border-radius: 999px;
+        padding: 0.25rem 0.65rem;
+        white-space: nowrap;
+      }
+
+      .badge::before {
+        content: "";
+        display: block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .badge-done {
+        background: var(--badge-done-bg);
+        color: var(--badge-done-text);
+      }
+      .badge-done::before {
+        background: var(--badge-done-text);
+      }
+
+      .badge-processing {
+        background: var(--badge-proc-bg);
+        color: var(--badge-proc-text);
+      }
+      .badge-processing::before {
+        background: var(--badge-proc-text);
+        animation: pulse 1.4s ease infinite;
+      }
+
+      .badge-pending {
+        background: var(--badge-pend-bg);
+        color: var(--badge-pend-text);
+      }
+      .badge-pending::before {
+        background: var(--badge-pend-text);
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.35;
+        }
+      }
+
+      /* ─── Payslip Link ─────────────────────────────────────────── */
+      .payslip-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--color-info);
+        text-decoration: none;
+        padding: 0.3rem 0.65rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid #bfdbfe;
+        background: var(--color-info-bg);
+        transition:
+          background 0.12s,
+          box-shadow 0.12s;
+        white-space: nowrap;
+      }
+      .payslip-link:hover {
+        background: #d1e8fc;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .payslip-na {
+        font-size: 0.8125rem;
+        color: #b0b8c8;
+        font-style: italic;
+      }
+
+      /* ─── State Screens ────────────────────────────────────────── */
+      .state-screen {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 260px;
+        padding: 1.5rem;
+        gap: 0.75rem;
+        text-align: center;
+      }
+
+      .state-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.25rem;
+      }
+
+      .state-icon-loading {
+        background: #edf0f5;
+      }
+      .state-icon-empty {
+        background: #fff8ed;
+      }
+      .state-icon-error {
+        background: var(--color-error-bg);
+      }
+
+      .state-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--color-primary);
+      }
+
+      .state-desc {
+        font-size: 0.875rem;
+        color: var(--color-muted);
+        max-width: 320px;
+        line-height: 1.55;
+      }
+
+      .loading-dots span {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        background: var(--color-accent);
+        border-radius: 50%;
+        margin: 0 2px;
+        animation: bounce 0.8s ease infinite;
+      }
+      .loading-dots span:nth-child(2) {
+        animation-delay: 0.15s;
+      }
+      .loading-dots span:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+
+      @keyframes bounce {
+        0%,
+        80%,
+        100% {
+          transform: translateY(0);
+        }
+        40% {
+          transform: translateY(-7px);
+        }
+      }
+
+      /* ─── Footer ────────────────────────────────────────────────── */
+      .site-footer {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 1.5rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .footer-note {
+        font-size: 0.75rem;
+        color: var(--color-muted);
+      }
+
+      .footer-arch {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.7rem;
+        color: #a0aec0;
+        font-weight: 500;
+      }
+
+      .arch-node {
+        background: #eaecf0;
+        border-radius: 4px;
+        padding: 0.2rem 0.45rem;
+        color: var(--color-secondary);
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+
+      .arch-arrow {
+        color: #c5cbd8;
+        font-size: 0.65rem;
+      }
+
+      /* ─── Responsive ─────────────────────────────────────────────── */
+      @media (max-width: 1100px) {
+        .stats-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      @media (max-width: 720px) {
+        .main-content {
+          padding: 1.25rem 1rem 3rem;
+        }
+        .stats-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .action-bar {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .action-bar-right {
+          margin-left: 0;
+        }
+        .header-clock {
+          display: none;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ─── Header ─────────────────────────────────────────────────── -->
+    <header class="site-header" role="banner">
+      <div class="header-brand">
+        <div class="header-logo" aria-hidden="true">
+          <!-- AWS-style cloud glyph -->
+          <svg
+            width="22"
+            height="16"
+            viewBox="0 0 22 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M6 13C3.24 13 1 10.76 1 8C1 5.58 2.72 3.56 5.02 3.09C5.01 2.9 5 2.7 5 2.5C5 1.12 6.12 0 7.5 0C8.18 0 8.8.27 9.26.7C10.05.26 10.99 0 12 0C15.31 0 18 2.69 18 6C18 6.34 17.97 6.67 17.91 7H18C19.66 7 21 8.34 21 10C21 11.66 19.66 13 18 13H6Z"
+              fill="#232F3E"
+            />
+          </svg>
+        </div>
+        <div class="header-titles">
+          <span class="header-title">AWS Payroll Dashboard</span>
+          <span class="header-subtitle">
+            Serverless Payroll Processing &amp; Payslip Management
+          </span>
+        </div>
+      </div>
+      <div class="header-spacer"></div>
+      <div class="header-meta">
+        <span class="header-clock" id="clock" aria-live="polite"></span>
+      </div>
+    </header>
+
+    <!-- ─── Main ───────────────────────────────────────────────────── -->
+    <main class="main-content" role="main">
+      <!-- Summary Stats -->
+      <div class="stats-grid" id="stats-grid" aria-label="Payroll summary">
+        <div class="stat-card stat-accent">
+          <span class="stat-label">Total Runs</span>
+          <span class="stat-value" id="stat-total">—</span>
+          <span class="stat-sub">Records loaded</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Completed</span>
+          <span class="stat-value" id="stat-done">—</span>
+          <span class="stat-sub">Status: DONE</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Total Net Pay</span>
+          <span class="stat-value" id="stat-net">—</span>
+          <span class="stat-sub">Across all records</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Total Deductions</span>
+          <span class="stat-value" id="stat-ded">—</span>
+          <span class="stat-sub">Across all records</span>
+        </div>
+      </div>
+
+      <!-- Action Bar -->
+      <div class="action-bar" role="toolbar" aria-label="Payroll actions">
+        <div class="action-bar-left">
+          <!-- Start Payroll Run -->
+          <button
+            class="btn btn-primary"
+            id="btn-start-payroll"
+            aria-label="Start a new payroll run"
+            onclick="startPayrollRun()"
+          >
+            <span class="btn-icon" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                <polygon points="4,2 13,7.5 4,13" fill="currentColor" />
+              </svg>
+            </span>
+            <div class="spinner" aria-hidden="true"></div>
+            Start Payroll Run
+          </button>
+
+          <!-- Export CSV -->
+          <button
+            class="btn btn-secondary"
+            id="btn-export-csv"
+            aria-label="Export payroll records as CSV"
+            onclick="exportCSV()"
+            disabled
+          >
+            <span class="btn-icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path
+                  d="M7 9.5L3 5.5H5.5V1H8.5V5.5H11L7 9.5Z"
+                  fill="currentColor"
+                />
+                <rect
+                  x="1"
+                  y="11"
+                  width="12"
+                  height="2"
+                  rx="1"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+            Export CSV
+          </button>
+        </div>
+
+        <div class="action-bar-right">
+          <!-- Refresh -->
+          <button
+            class="btn btn-ghost"
+            id="btn-refresh"
+            aria-label="Refresh payroll runs"
+            onclick="loadPayrollRuns()"
+          >
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <path
+                d="M11 6.5A4.5 4.5 0 116.5 2H9M9 2L11.5 4.5M9 2L6.5 4.5"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- Payroll Runs Table -->
+      <div class="table-card" role="region" aria-label="Payroll runs">
+        <div class="table-card-header">
+          <span class="table-title">Payroll Runs</span>
+          <span class="table-count" id="table-count">Loading…</span>
+          <div class="table-header-actions">
+            <span class="section-heading"
+              >Last refreshed: <span id="last-refreshed">—</span></span
+            >
+          </div>
+        </div>
+
+        <div id="table-state">
+          <!-- Loading state -->
+          <div class="state-screen" id="state-loading">
+            <div class="state-icon state-icon-loading" aria-hidden="true">
+              <div class="loading-dots">
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+            <p class="state-title">Fetching payroll records…</p>
+            <p class="state-desc">
+              Connecting to AWS API Gateway. This usually takes just a moment.
+            </p>
+          </div>
+
+          <!-- Empty state -->
+          <div class="state-screen" id="state-empty" style="display: none">
+            <div class="state-icon state-icon-empty" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                <rect
+                  x="4"
+                  y="6"
+                  width="20"
+                  height="17"
+                  rx="2"
+                  stroke="#FF9900"
+                  stroke-width="1.75"
+                />
+                <path
+                  d="M9 11H19M9 15H16"
+                  stroke="#FF9900"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </div>
+            <p class="state-title">No payroll runs found</p>
+            <p class="state-desc">
+              No records have been returned by the API yet. Start a payroll run
+              to generate your first record.
+            </p>
+          </div>
+
+          <!-- Error state -->
+          <div class="state-screen" id="state-error" style="display: none">
+            <div class="state-icon state-icon-error" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                <circle
+                  cx="14"
+                  cy="14"
+                  r="11"
+                  stroke="#C0392B"
+                  stroke-width="1.75"
+                />
+                <path
+                  d="M14 8V15"
+                  stroke="#C0392B"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <circle cx="14" cy="19" r="1.25" fill="#C0392B" />
+              </svg>
+            </div>
+            <p class="state-title">Failed to load records</p>
+            <p class="state-desc" id="error-msg-text">
+              Unable to reach the API. Check your network connection and try
+              refreshing.
+            </p>
+            <button
+              class="btn btn-secondary"
+              onclick="loadPayrollRuns()"
+              style="margin-top: 0.5rem"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+
+        <!-- Table (hidden until data loads) -->
+        <div
+          class="table-scroll"
+          id="table-wrapper"
+          style="display: none"
+          role="region"
+          aria-label="Payroll run records"
+        >
+          <table aria-label="Payroll runs table">
+            <thead>
+              <tr>
+                <th scope="col">Run ID</th>
+                <th scope="col">Employee</th>
+                <th scope="col">Month</th>
+                <th scope="col" class="col-num">Gross (₹)</th>
+                <th scope="col" class="col-num">Deductions (₹)</th>
+                <th scope="col" class="col-num">Net Pay (₹)</th>
+                <th scope="col">Status</th>
+                <th scope="col">Payslip</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <!-- ─── Footer ──────────────────────────────────────────────────── -->
+    <footer class="site-footer" role="contentinfo">
+      <span class="footer-note">
+        AWS Serverless Payroll Management System
+      </span>
+      <div class="footer-arch" aria-label="Architecture flow">
+        <span class="arch-node">API Gateway</span>
+        <span class="arch-arrow">›</span>
+        <span class="arch-node">Lambda</span>
+        <span class="arch-arrow">›</span>
+        <span class="arch-node">SQS</span>
+        <span class="arch-arrow">›</span>
+        <span class="arch-node">DynamoDB</span>
+        <span class="arch-arrow">›</span>
+        <span class="arch-node">S3</span>
+      </div>
+    </footer>
+
+    <!-- ─── Toast Host ───────────────────────────────────────────────── -->
+    <div
+      class="toast-host"
+      id="toast-host"
+      aria-live="polite"
+      aria-atomic="false"
+    ></div>
+
+    <script>
+      /* ═══════════════════════════════════════════════════════
+       Constants
+    ═══════════════════════════════════════════════════════ */
+      const API_BASE =
+        "https://bc7i2l9kej.execute-api.ap-south-1.amazonaws.com/prod";
+      const ENDPOINT_START = `${API_BASE}/run-payroll`;
+      const ENDPOINT_GET_RUNS = `${API_BASE}/payroll-runs`;
+
+      /** In-memory store for currently loaded records */
+      let payrollRecords = [];
+
+      /* ═══════════════════════════════════════════════════════
+       Live Clock
+    ═══════════════════════════════════════════════════════ */
+      function updateClock() {
+        const now = new Date();
+        document.getElementById("clock").textContent = now.toLocaleTimeString(
+          "en-IN",
+          { hour: "2-digit", minute: "2-digit", second: "2-digit" },
+        );
+      }
+      updateClock();
+      setInterval(updateClock, 1000);
+
+      /* ═══════════════════════════════════════════════════════
+       Toast Notifications
+    ═══════════════════════════════════════════════════════ */
+      /**
+       * Shows a toast notification.
+       * @param {'success'|'error'|'info'} type
+       * @param {string} title  - Short headline
+       * @param {string} [msg]  - Optional detail
+       * @param {number} [duration=4500] - Auto-dismiss in ms
+       */
+      function showToast(type, title, msg = "", duration = 4500) {
+        const icons = { success: "✓", error: "✕", info: "ℹ" };
+        const host = document.getElementById("toast-host");
+
+        const toast = document.createElement("div");
+        toast.className = `toast toast-${type}`;
+        toast.setAttribute("role", "alert");
+
+        toast.innerHTML = `
+        <span class="toast-icon" aria-hidden="true">${icons[type] ?? "•"}</span>
+        <div class="toast-body">
+          <div class="toast-title">${escapeHtml(title)}</div>
+          ${msg ? `<div class="toast-msg">${escapeHtml(msg)}</div>` : ""}
+        </div>
+        <button class="toast-close" aria-label="Dismiss notification" onclick="this.closest('.toast').remove()">✕</button>
+      `;
+
+        host.appendChild(toast);
+
+        // Auto-dismiss
+        setTimeout(() => {
+          if (toast.parentNode) {
+            toast.style.transition = "opacity .3s";
+            toast.style.opacity = "0";
+            setTimeout(() => toast.remove(), 300);
+          }
+        }, duration);
+      }
+
+      /* ═══════════════════════════════════════════════════════
+       UI State Helpers
+    ═══════════════════════════════════════════════════════ */
+      /** Switch between loading / empty / error / table states */
+      function showState(name) {
+        const states = ["loading", "empty", "error"];
+        states.forEach((s) => {
+          const el = document.getElementById(`state-${s}`);
+          if (el) el.style.display = s === name ? "" : "none";
+        });
+
+        const wrapper = document.getElementById("table-wrapper");
+        wrapper.style.display = name === "table" ? "" : "none";
+
+        // Show the state container when not showing table
+        const stateContainer = document.getElementById("table-state");
+        stateContainer.style.display = name === "table" ? "none" : "";
+      }
+
+      /* ═══════════════════════════════════════════════════════
+       Summary Statistics
+    ═══════════════════════════════════════════════════════ */
+      function updateStats(records) {
+        const total = records.length;
+        const done = records.filter((r) => r.status === "DONE").length;
+        const netPay = records.reduce(
+          (s, r) => s + (Number(r.net_pay) || 0),
+          0,
+        );
+        const ded = records.reduce(
+          (s, r) => s + (Number(r.deductions_total) || 0),
+          0,
+        );
+
+        document.getElementById("stat-total").textContent = total;
+        document.getElementById("stat-done").textContent = done;
+        document.getElementById("stat-net").textContent = total
+          ? formatCurrency(netPay)
+          : "—";
+        document.getElementById("stat-ded").textContent = total
+          ? formatCurrency(ded)
+          : "—";
+      }
+
+      /* ═══════════════════════════════════════════════════════
+       Load Payroll Runs  (GET)
+    ═══════════════════════════════════════════════════════ */
+      async function loadPayrollRuns() {
+        showState("loading");
+        setRefreshBtnState(true);
+
+        try {
+          const res = await fetch(ENDPOINT_GET_RUNS, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          });
+
+          if (!res.ok)
+            throw new Error(`HTTP ${res.status} — ${res.statusText}`);
+
+          const raw = await res.json();
+
+          // Normalise: the API might return an array or wrap records
+          const records = Array.isArray(raw)
+            ? raw
+            : Array.isArray(raw.items)
+              ? raw.items
+              : [];
+
+          payrollRecords = records;
+          updateStats(records);
+          renderTable(records);
+
+          // Update table badge
+          document.getElementById("table-count").textContent =
+            records.length === 1 ? "1 record" : `${records.length} records`;
+
+          // Update last-refreshed timestamp
+          document.getElementById("last-refreshed").textContent =
+            new Date().toLocaleTimeString("en-IN", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+
+          // Enable CSV export if we have data
+          document.getElementById("btn-export-csv").disabled =
+            records.length === 0;
+
+          if (records.length === 0) {
+            showState("empty");
+          } else {
+            showState("table");
+          }
+        } catch (err) {
+          console.error("[PayrollDash] Load error:", err);
+          document.getElementById("error-msg-text").textContent =
+            err.message || "Unable to reach the API. Please try again.";
+          showState("error");
+          document.getElementById("table-count").textContent = "Error";
+          showToast("error", "Failed to load records", err.message);
+        } finally {
+          setRefreshBtnState(false);
+        }
+      }
+
+      function setRefreshBtnState(loading) {
+        const btn = document.getElementById("btn-refresh");
+        btn.disabled = loading;
+      }
+
+      /* ═══════════════════════════════════════════════════════
+       Render Table
+    ═══════════════════════════════════════════════════════ */
+      function renderTable(records) {
+        const tbody = document.getElementById("table-body");
+        tbody.innerHTML = "";
+
+        records.forEach((rec) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+          <td><span class="run-id" title="${escapeHtml(rec.run_id || "")}">${abbreviateId(rec.run_id)}</span></td>
+          <td><span class="employee-id">${escapeHtml(rec.employee_id || "—")}</span></td>
+          <td><span class="month-chip">${escapeHtml(rec.month || "—")}</span></td>
+          <td class="col-num">${formatNum(rec.gross)}</td>
+          <td class="col-num">${formatNum(rec.deductions_total)}</td>
+          <td class="col-num"><strong>${formatNum(rec.net_pay)}</strong></td>
+          <td>${renderBadge(rec.status)}</td>
+          <td>${renderPayslipLink(rec.presigned_url)}</td>
+        `;
+          tbody.appendChild(row);
+        });
+      }
+
+      /** Render a coloured status badge */
+      function renderBadge(status) {
+        const s = (status || "").toUpperCase();
+        const classMap = {
+          DONE: "badge-done",
+          PROCESSING: "badge-processing",
+          PENDING: "badge-pending",
+        };
+        const cls = classMap[s] || "badge-pending";
+        return `<span class="badge ${cls}">${escapeHtml(s || "UNKNOWN")}</span>`;
+      }
+
+      /** Render payslip link or "Not Available" */
+      function renderPayslipLink(url) {
+        if (url && url.trim()) {
+          return `
+          <a class="payslip-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"
+             aria-label="Open payslip PDF in new tab">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M2 10H10V6H11V11H1V1H6V2H2V10Z" fill="currentColor"/>
+              <path d="M8 1H11V4L9.5 2.5L6.5 5.5L5.5 4.5L8.5 1.5L8 1Z" fill="currentColor"/>
+            </svg>
+            View Payslip
+          </a>`;
+        }
+        return '<span class="payslip-na">Not Available</span>';
+      }
+
+      /* ═══════════════════════════════════════════════════════
+       Start Payroll Run  (POST)
+    ═══════════════════════════════════════════════════════ */
+      async function startPayrollRun() {
+        const btn = document.getElementById("btn-start-payroll");
+        setButtonLoading(btn, true);
+
+        try {
+          const res = await fetch(ENDPOINT_START, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+          });
+
+          if (!res.ok) {
+            const errBody = await res.text().catch(() => "");
+            throw new Error(
+              `HTTP ${res.status}${errBody ? ` — ${errBody}` : ""}`,
+            );
+          }
+
+          showToast(
+            "success",
+            "Payroll run started",
+            "The payroll pipeline has been triggered. Records will appear shortly.",
+          );
+
+          // Auto-refresh after a brief delay to allow the pipeline to begin
+          setTimeout(loadPayrollRuns, 2000);
+        } catch (err) {
+          console.error("[PayrollDash] Start error:", err);
+          showToast("error", "Could not start payroll run", err.message);
+        } finally {
+          setButtonLoading(btn, false);
+        }
+      }
+
+      /** Toggle button loading state */
+      function setButtonLoading(btn, loading) {
+        btn.disabled = loading;
+        if (loading) {
+          btn.classList.add("btn--loading");
+        } else {
+          btn.classList.remove("btn--loading");
+        }
+      }
+
+      /* ═══════════════════════════════════════════════════════
+       Export CSV
+    ═══════════════════════════════════════════════════════ */
+      function exportCSV() {
+        if (!payrollRecords.length) {
+          showToast(
+            "info",
+            "Nothing to export",
+            "Load payroll records before exporting.",
+          );
+          return;
+        }
+
+        const columns = [
+          "run_id",
+          "employee_id",
+          "month",
+          "gross",
+          "deductions_total",
+          "net_pay",
+          "status",
+        ];
+        const header = columns.join(",");
+
+        const rows = payrollRecords.map((rec) =>
+          columns
+            .map((col) => {
+              const val = rec[col] ?? "";
+              // Wrap in quotes if value contains comma, newline or quote
+              const str = String(val);
+              return /[",\r\n]/.test(str)
+                ? `"${str.replace(/"/g, '""')}"`
+                : str;
+            })
+            .join(","),
+        );
+
+        const csvContent = [header, ...rows].join("\r\n");
+        const blob = new Blob([csvContent], {
+          type: "text/csv;charset=utf-8;",
+        });
+        const url = URL.createObjectURL(blob);
+
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = "payroll_register.csv";
+        anchor.click();
+
+        URL.revokeObjectURL(url);
+        showToast(
+          "success",
+          "CSV exported",
+          `${payrollRecords.length} records saved as payroll_register.csv`,
+        );
+      }
+
+      /* ═══════════════════════════════════════════════════════
+       Formatting Utilities
+    ═══════════════════════════════════════════════════════ */
+      /** Format a number with thousands separators */
+      function formatNum(val) {
+        const n = Number(val);
+        if (isNaN(n)) return "—";
+        return n.toLocaleString("en-IN");
+      }
+
+      /** Format a currency figure (compact) for stat cards */
+      function formatCurrency(val) {
+        const n = Number(val);
+        if (isNaN(n)) return "—";
+        return `₹${n.toLocaleString("en-IN")}`;
+      }
+
+      /** Abbreviate a UUID for display (first 8 chars + ellipsis) */
+      function abbreviateId(id) {
+        if (!id) return "—";
+        return id.length > 12 ? `${id.slice(0, 8)}…` : id;
+      }
+
+      /** Escape HTML to prevent XSS */
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      /* ═══════════════════════════════════════════════════════
+       Initialise
+    ═══════════════════════════════════════════════════════ */
+      document.addEventListener("DOMContentLoaded", loadPayrollRuns);
+    </script>
+  </body>
+</html>
